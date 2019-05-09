@@ -7,6 +7,7 @@
   let width = "";
   let height = "";
   let margin = "";
+  let div = "";
 
   // load data and make scatter plot after window loads
   window.onload = function() {
@@ -18,6 +19,13 @@
       .append('svg')
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom);
+    
+    // make tooltip
+    div = d3.select("body")
+        .append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+    
     // d3.csv is basically fetch but it can be be passed a csv file as a parameter
     d3.csv("data/SeasonsData.csv")
       .then((csvData) => makeHistogram(csvData));
@@ -45,7 +53,7 @@
 
         x.domain(seasons);
         y.domain([0, d3.max(avgViewers) + 4]);
-        
+
         svgContainer.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(95," + (height + 100) + ")")
@@ -83,7 +91,9 @@
                 if (d["Data"] !== "Actual") {
                     return "gray"
                 }
-            });
+            })
+            .on("mouseover", (d) => mouseIn(d))
+            .on("mouseout", (d) => mouseOut(d));
 
         bar.append("text")
             .attr("class", "below")
@@ -93,41 +103,42 @@
             .style("fill", "#000000")   
             .style("font-weight", "bold");
 
-
-        // text label for the x axis
-        svgContainer.append("text")   
-            .attr("y", height + margin.bottom + 80)
-            .attr("x", (width / 2) + 80)
-            .style("text-anchor", "middle")
-            .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
-            .text("Season (by year)");
-        
-        // text label for the y axis
-        svgContainer.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 40)
-            .attr("x", - (height / 2) - 100)
-            .style("text-anchor", "middle")
-            .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
-            .text("Avg. Viewers (in millions)"); 
-
-        // text label for the title
-        svgContainer.append("text")
-            .attr("y", 25)
-            .attr("x", (width / 2) + 100)
-            .style("text-anchor", "middle")
-            .style("font-size", "25px")
-            .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
-            .text("Average Viewership By Season"); 
-
+        // add graph labels    
+        addLabels();
         // add legend to graph    
         addLegend();
-
         // add mean line
         addAvgLine(y(avgOfAvgViewers), avgOfAvgViewers)
     }
 
 
+// mouseIn handles when user mouses over bar on chart
+function mouseIn(d) {
+    div.transition()
+            .duration(200)
+            .style("opacity", 1)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+          div.html("Season #" + d["Year"] +
+                   "<br/>" + "Year: <span>" + d["Year"] + "</span>" +
+                   "<br/>" + "Episodes: <span>" + d["Episodes"] + "</span>" +
+                   "<br/>" + "Avg Viewers (mil): <span>" + d["Avg. Viewers (mil)"] + "</span> <br/>" +
+                   "<br/>" + "Most Watched Episode: <span>" + d["Most watched episode"] + "</span>" +
+                   "<br/>" + "Viewers (mil): <span>" + d["Viewers (mil)"] + "</span>"
+                   )
+
+}
+
+// mouseOut handles when user mouses away from bar on chart
+function mouseOut(d) {
+    div.transition()
+        .duration(500)
+        .style("opacity", 0);
+}
+
+
+// addAvgLine takes in the scaled location of the average along
+// the y axis and the avg and draws a dashed average line on the chart
 function addAvgLine(avgLoc, avg) {
     var avgLine = svgContainer.append("g")
 
@@ -164,6 +175,36 @@ function addAvgLine(avgLoc, avg) {
     .text(avg)
 
     
+}
+
+
+// addLabels adds text labels for axis and the title of the graph
+function addLabels() {
+    // text label for the x axis
+    svgContainer.append("text")   
+        .attr("y", height + margin.bottom + 80)
+        .attr("x", (width / 2) + 80)
+        .style("text-anchor", "middle")
+        .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
+        .text("Season (by year)");
+    
+    // text label for the y axis
+    svgContainer.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 40)
+        .attr("x", - (height / 2) - 100)
+        .style("text-anchor", "middle")
+        .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
+        .text("Avg. Viewers (in millions)"); 
+
+    // text label for the title
+    svgContainer.append("text")
+        .attr("y", 25)
+        .attr("x", (width / 2) + 100)
+        .style("text-anchor", "middle")
+        .style("font-size", "25px")
+        .style("font-family", "Tableau Light, Tableau, Arial, sans-serif")
+        .text("Average Viewership By Season"); 
 }
 
 
